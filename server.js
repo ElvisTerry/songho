@@ -1,15 +1,14 @@
-// ============================================================
-    // ===================== CONSTANTES ============================
-    // ============================================================
+
+    // CONSTANTES 
     const TOTAL_PITS = 14;
     const PITS_PER_PLAYER = 7;
     const INIT_SEEDS = 5;
     const WIN_SCORE = 40;
     const SOLIDARITY_GIFT = 7;
 
-    // ============================================================
-    // ===================== ÉTAT GLOBAL ===========================
-    // ============================================================
+   
+    //  ÉTAT GLOBAL 
+   
     let board = new Array(TOTAL_PITS).fill(INIT_SEEDS);
     let scores = [0, 0];
     let currentPlayer = 0; // 0 = Sud, 1 = Nord
@@ -43,9 +42,9 @@
     let scoreNord, scoreSud, statusDot, statusText, lastMoveTextEl, historyList, historyArrow;
     let gameCode;
 
-    // ============================================================
-    // ===================== AUDIO ================================
-    // ============================================================
+
+    //  AUDIO 
+    
     function initAudio() {
       try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
     }
@@ -99,9 +98,9 @@
       } catch (e) {}
     }
 
-    // ============================================================
-    // ===================== STATISTIQUES =========================
-    // ============================================================
+    
+    // STATISTIQUES 
+    
     function loadStats() {
       try {
         const saved = localStorage.getItem('songhoStatsV3');
@@ -142,9 +141,9 @@
       updateStatsUI();
     }
 
-    // ============================================================
-    // ===================== THÈME ================================
-    // ============================================================
+
+    //  THÈME 
+    
     function applyTheme() {
       const isLight = document.getElementById('themeToggle').checked;
       document.body.classList.toggle('light-theme', isLight);
@@ -157,9 +156,9 @@
       applyTheme();
     }
 
-    // ============================================================
-    // ===================== UTILITAIRES ==========================
-    // ============================================================
+    
+    //  UTILITAIRES 
+    
     function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
 
     function other(p) { return 1 - p; }
@@ -168,9 +167,9 @@
 
     function getPlayerShort(p) { return p === 0 ? 'S' : 'N'; }
 
-    // ============================================================
-    // ===================== MÉCANIQUES DE JEU ====================
-    // ============================================================
+    
+    // MÉCANIQUES DE JEU 
+    
 
     function isCampEmpty(player) {
       const start = player * PITS_PER_PLAYER;
@@ -305,9 +304,9 @@
       return getPlayerShort(pos.p) + (pos.i + 1);
     }
 
-    // ============================================================
-    // ===================== PLANIFICATION DU COUP ================
-    // ============================================================
+    
+    //  PLANIFICATION DU COUP 
+    
     function computeMovePlan(boardState, player, pitIndex) {
       const sim = [...boardState];
       const seeds = sim[pitIndex];
@@ -344,9 +343,9 @@
       return { seedsCount: seeds, path, captureTarget, capturePts, sourcePos: pitIndex };
     }
 
-    // ============================================================
-    // ===================== ANIMATION ============================
-    // ============================================================
+    
+    // ANIMATION 
+   
     function animateMove(player, pitIndex, plan) {
       return new Promise((resolve) => {
         const allPits = document.querySelectorAll('.pit');
@@ -437,9 +436,9 @@
       });
     }
 
-    // ============================================================
-    // ===================== EXÉCUTION D'UN COUP ==================
-    // ============================================================
+    
+    //EXÉCUTION D'UN COUP 
+    
     function setLastMove(text) {
       lastMoveText = text;
       if (lastMoveTextEl) lastMoveTextEl.innerText = text;
@@ -491,7 +490,7 @@
       let captured = captureResult.captured;
 
       if (wouldEmptyOpponentCamp(newBoard, player)) {
-        setLastMove('⛔ Coup interdit : vous videriez le camp adverse !');
+        setLastMove(' Coup interdit : vous videriez le camp adverse !');
         isProcessing = false;
         return false;
       }
@@ -552,9 +551,9 @@
       executeMove(currentPlayer, pit);
     }
 
-    // ============================================================
-    // ===================== IA ===================================
-    // ============================================================
+    
+    //  IA 
+    
     function simulateMoveIA(pit, player, boardState, scoresState) {
       const testBoard = [...boardState];
       const testScores = [...scoresState];
@@ -653,9 +652,9 @@
       updateUI();
     }
 
-    // ============================================================
-    // ===================== RENDU DU PLATEAU =====================
-    // ============================================================
+    
+    //  RENDU DU PLATEAU 
+    
     function renderBoard() {
       if (!boardDiv) return;
       boardDiv.innerHTML = '';
@@ -740,9 +739,9 @@
       }
     }
 
-    // ============================================================
-    // ===================== GESTION D'ÉTAT =======================
-    // ============================================================
+    
+    // GESTION D'ÉTAT 
+    
     function updateStatus(text, state = 'idle') {
       if (statusText) statusText.innerText = text;
       if (statusDot) {
@@ -805,9 +804,9 @@
       difficultyScreen.classList.add('active');
     }
 
-    // ============================================================
-    // ===================== INITIALISATION =======================
-    // ============================================================
+   
+    // INITIALISATION 
+    
     document.addEventListener('DOMContentLoaded', () => {
       // Références DOM
       homeScreen = document.getElementById('homeScreen');
@@ -852,7 +851,7 @@
       homeScreen.classList.add('active');
       resetGame();
 
-      // ===== ÉVÉNEMENTS ACCUEIL =====
+      //  ÉVÉNEMENTS ACCUEIL
       // Bouton VS IA
       document.getElementById('btnVsAI').addEventListener('click', () => {
         pendingMode = 'solo';
@@ -897,7 +896,7 @@
         startGame(pendingMode || 'twoPlayer', aiDifficulty);
       });
 
-      // ===== ÉVÉNEMENTS JEU =====
+      // ÉVÉNEMENTS JEU 
       document.getElementById('rulesBtnGame').addEventListener('click', () => {
         rulesModal.classList.remove('hidden');
       });
