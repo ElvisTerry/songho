@@ -42,6 +42,202 @@
     let scoreNord, scoreSud, statusDot, statusText, lastMoveTextEl, historyList, historyArrow;
     let gameCode;
 
+    
+    //  MULTIJOUEUR EN LIGNE (WebRTC, signalisation manuelle) 
+    
+
+    // STUN public gratuit (Google) : aide à traverser la plupart des routeurs
+    // domestiques. Sans serveur TURN (payant/à héberger), certains réseaux très
+    // restrictifs (NAT symétrique, pare-feu d'entreprise strict) peuvent
+    // empêcher la connexion directe entre les deux navigateurs.
+    const ICE_SERVERS = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+    let peerConnection = null;
+    let dataChannel = null;
+    let onlineRole = null;        // 0 = hôte (Sud), 1 = invité (Nord)
+    let onlinePlayerRole = null;  // rôle utilisé pendant la partie en cours
+    let onlineConnected = false;
+
+    function encodeSDP(desc) {
+      return btoa(JSON.stringify(desc));
+    }
+
+    function decodeSDP(code) {
+      return JSON.parse(atob(code.trim()));
+    }
+
+    function waitForIceGatheringComplete(pc) {
+      return new Promise((resolve) => {
+        if (pc.iceGatheringState === 'complete') { resolve(); return; }
+        function check() {
+          if (pc.iceGatheringState === 'complete') {
+            pc.removeEventListener('icegatheringstatechange', check);
+            resolve();
+          }
+        }
+        pc.addEventListener('icegatheringstatechange', check);
+      });
+    }
+
+    function setupDataChannelEvents(channel) {
+      channel.onopen = () => {
+        onlineConnected = true;
+        const modal = document.getElementById('onlineModal');
+        if (modal) modal.classList.add('hidden');
+        startGame('online', 1, onlineRole);
+      };
+      channel.onclose = () => {
+        onlineConnected = false;
+        if (gameMode === 'online') {
+          alert("Connexion perdue avec ton adversaire.");
+          backToHome();
+        }
+      };
+      channel.onerror = () => {
+        onlineConnected = false;
+      };
+      channel.onmessage = (event) => {
+        let msg;
+        try { msg = JSON.parse(event.data); } catch (e) { return; }
+        if (msg.type === 'move') {
+          executeMove(msg.player, msg.pit);
+        } else if (msg.type === 'restart') {
+          resetGame();
+        } else if (msg.type === 'quit') {
+          backToHome();
+        }
+      };
+    }
+
+    function sendOnlineMessage(msg) {
+      if (dataChannel && dataChannel.readyState === 'open') {
+        dataChannel.send(JSON.stringify(msg));
+      }
+    }
+
+    function closeOnlineConnection() {
+      if (dataChannel) { try { dataChannel.close(); } catch (e) {} }
+      if (peerConnection) { try { peerConnection.close(); } catch (e) {} }
+      dataChannel = null;
+      peerConnection = null;
+      onlineConnected = false;
+    }
+
+    // --- Hôte : crée l'offre ---
+    async function createHostOffer() {
+      closeOnlineConnection();
+      peerConnection = new RTCPeerConnection(ICE_SERVERS);
+      dataChannel = peerConnection.createDataChannel('songho');
+      setupDataChannelEvents(dataChannel);
+
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      await waitForIceGatheringComplete(peerConnection);
+
+      onlineRole = 0;
+      const field = document.getElementById('hostOfferCode');
+      if (field) field.value = encodeSDP(peerConnection.localDescription);
+    }
+
+    // --- Hôte : applique le code réponse de l'invité ---
+    async function connectHostWithAnswer(answerCode) {
+      const statusEl = document.getElementById('hostStatusMsg');
+      try {
+        const answer = decodeSDP(answerCode);
+        await peerConnection.setRemoteDescription(answer);
+        if (statusEl) statusEl.innerText = 'Connexion en cours...';
+      } catch (e) {
+        if (statusEl) statusEl.innerText = 'Code invalide.';
+      }
+    }
+
+    // --- Invité : reçoit l'offre, génère la réponse ---
+    async function joinWithOffer(offerCode) {
+      const statusEl = document.getElementById('joinStatusMsg');
+      try {
+        const offer = decodeSDP(offerCode);
+        closeOnlineConnection();
+        peerConnection = new RTCPeerConnection(ICE_SERVERS);
+        peerConnection.ondatachannel = (event) => {
+          dataChannel = event.channel;
+          setupDataChannelEvents(dataChannel);
+        };
+
+        await peerConnection.setRemoteDescription(offer);
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        await waitForIceGatheringComplete(peerConnection);
+
+        onlineRole = 1;
+        const field = document.getElementById('joinAnswerCode');
+        if (field) field.value = encodeSDP(peerConnection.localDescription);
+        if (statusEl) statusEl.innerText = "Code généré : envoie-le à l'hôte, puis attends la connexion...";
+      } catch (e) {
+        if (statusEl) statusEl.innerText = 'Code invalide.';
+      }
+    }
+
+    function updateInfoBar() {
+      const codeEl = document.getElementById('gameCode');
+      const linkEl = document.getElementById('linkStatus');
+      if (!codeEl || !linkEl) return;
+
+      if (gameMode === 'online') {
+        codeEl.innerText = onlinePlayerRole === 0 ? 'HÔTE (Sud)' : 'INVITÉ (Nord)';
+        linkEl.innerText = onlineConnected ? 'Connecté ✅' : 'Connexion...';
+      } else if (gameMode === 'solo') {
+        codeEl.innerText = 'SOLO';
+        linkEl.innerText = 'IA locale';
+      } else {
+        codeEl.innerText = 'LOCAL';
+        linkEl.innerText = 'Même écran';
+      }
+    }
+
+    
+    //  STATISTIQUES : EXPORT / IMPORT (transfert entre appareils) 
+    
+
+    function exportStats() {
+      const blob = new Blob([JSON.stringify(stats, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'songho-stats.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function importStatsFromFile(file) {
+      const statusEl = document.getElementById('importStatsMsg');
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          const requiredKeys = ['totalGames', 'winsSolo', 'winsDuo', 'draws', 'totalSeeds', 'bestScore'];
+          const isValid = requiredKeys.every((k) => typeof imported[k] === 'number');
+          if (!isValid) throw new Error('format invalide');
+
+          stats = {
+            totalGames: imported.totalGames,
+            winsSolo: imported.winsSolo,
+            winsDuo: imported.winsDuo,
+            draws: imported.draws,
+            totalSeeds: imported.totalSeeds,
+            bestScore: imported.bestScore
+          };
+          saveStats();
+          updateStatsUI();
+          if (statusEl) statusEl.innerText = 'Statistiques importées avec succès.';
+        } catch (e) {
+          if (statusEl) statusEl.innerText = 'Fichier invalide.';
+        }
+      };
+      reader.readAsText(file);
+    }
+
 
     //  AUDIO 
     
@@ -132,6 +328,7 @@
         if (gameMode === 'solo') {
           if (winnerIsPlayer1) stats.winsSolo++;
         } else {
+          // 'twoPlayer' (local) et 'online' comptent tous deux comme du duo humain vs humain
           if (winnerIsPlayer1) stats.winsDuo++;
         }
       }
@@ -547,8 +744,15 @@
       return true;
     }
 
-    function handleMove(pit) {
-      executeMove(currentPlayer, pit);
+    async function handleMove(pit) {
+      if (gameMode === 'online') {
+        if (!onlineConnected || currentPlayer !== onlinePlayerRole) return;
+        const player = currentPlayer;
+        const success = await executeMove(player, pit);
+        if (success) sendOnlineMessage({ type: 'move', player, pit });
+      } else {
+        executeMove(currentPlayer, pit);
+      }
     }
 
     
@@ -720,6 +924,8 @@
           active = currentPlayer === owner;
         } else if (gameMode === 'solo') {
           active = currentPlayer === owner && !waitingForAI && !isProcessing;
+        } else if (gameMode === 'online') {
+          active = currentPlayer === owner && owner === onlinePlayerRole && onlineConnected && !isProcessing;
         }
       }
       if (!active) {
@@ -779,11 +985,13 @@
       updateStatus('En attente...', 'waiting');
       victoryOverlay.classList.add('hidden');
       updateUI();
+      updateInfoBar();
     }
 
-    function startGame(mode, difficulty = 1) {
+    function startGame(mode, difficulty = 1, forcedRole = null) {
       gameMode = mode;
       aiDifficulty = difficulty;
+      onlinePlayerRole = mode === 'online' ? forcedRole : null;
       homeScreen.classList.remove('active');
       difficultyScreen.classList.remove('active');
       gameScreen.classList.add('active');
@@ -796,6 +1004,9 @@
     function backToHome() {
       gameScreen.classList.remove('active');
       homeScreen.classList.add('active');
+      if (gameMode === 'online') {
+        closeOnlineConnection();
+      }
       resetGame();
     }
 
@@ -832,9 +1043,6 @@
       historyArrow = document.getElementById('historyArrow');
       gameCode = document.getElementById('gameCode');
 
-      // Générer un code aléatoire
-      gameCode.innerText = Math.random().toString(36).substring(2, 9).toUpperCase();
-
       // Audio
       initAudio();
 
@@ -858,11 +1066,28 @@
         showDifficultyScreen();
       });
 
-      // Bouton Deux joueurs
+      // Bouton Deux joueurs (local)
       document.getElementById('btnTwoPlayer').addEventListener('click', () => {
         pendingMode = 'twoPlayer';
         showDifficultyScreen();
       });
+
+      // Bouton En ligne (P2P)
+      const btnOnline = document.getElementById('btnOnline');
+      if (btnOnline) {
+        btnOnline.addEventListener('click', () => {
+          document.getElementById('onlineChoice').classList.remove('hidden');
+          document.getElementById('onlineHostPanel').classList.add('hidden');
+          document.getElementById('onlineJoinPanel').classList.add('hidden');
+          document.getElementById('hostOfferCode').value = '';
+          document.getElementById('hostAnswerInput').value = '';
+          document.getElementById('joinOfferInput').value = '';
+          document.getElementById('joinAnswerCode').value = '';
+          document.getElementById('hostStatusMsg').innerText = '';
+          document.getElementById('joinStatusMsg').innerText = '';
+          document.getElementById('onlineModal').classList.remove('hidden');
+        });
+      }
 
       // Boutons icon
       document.getElementById('btnRules').addEventListener('click', () => {
@@ -908,6 +1133,7 @@
 
       document.getElementById('restartBtn').addEventListener('click', () => {
         if (confirm('Recommencer la partie ?')) {
+          if (gameMode === 'online') sendOnlineMessage({ type: 'restart' });
           resetGame();
           if (gameMode === 'solo' && currentPlayer === 1 && gameActive) {
             setTimeout(() => makeAIMove(), 800);
@@ -917,6 +1143,7 @@
 
       document.getElementById('quitBtn').addEventListener('click', () => {
         if (confirm('Quitter la partie ?')) {
+          if (gameMode === 'online') sendOnlineMessage({ type: 'quit' });
           backToHome();
         }
       });
@@ -937,6 +1164,87 @@
         backToHome();
       });
 
+      // Modale En ligne (P2P)
+      const closeOnlineBtn = document.getElementById('closeOnlineBtn');
+      if (closeOnlineBtn) {
+        closeOnlineBtn.addEventListener('click', () => {
+          document.getElementById('onlineModal').classList.add('hidden');
+        });
+      }
+
+      const onlineHostBtn = document.getElementById('onlineHostBtn');
+      if (onlineHostBtn) {
+        onlineHostBtn.addEventListener('click', async () => {
+          document.getElementById('onlineChoice').classList.add('hidden');
+          document.getElementById('onlineHostPanel').classList.remove('hidden');
+          document.getElementById('hostStatusMsg').innerText = 'Génération du code...';
+          await createHostOffer();
+          document.getElementById('hostStatusMsg').innerText = 'Code prêt : envoie-le à ton adversaire.';
+        });
+      }
+
+      const copyHostOfferBtn = document.getElementById('copyHostOfferBtn');
+      if (copyHostOfferBtn) {
+        copyHostOfferBtn.addEventListener('click', () => {
+          const ta = document.getElementById('hostOfferCode');
+          ta.select();
+          if (navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(() => {});
+        });
+      }
+
+      const hostConnectBtn = document.getElementById('hostConnectBtn');
+      if (hostConnectBtn) {
+        hostConnectBtn.addEventListener('click', () => {
+          const code = document.getElementById('hostAnswerInput').value;
+          if (code) connectHostWithAnswer(code);
+        });
+      }
+
+      const onlineJoinBtn = document.getElementById('onlineJoinBtn');
+      if (onlineJoinBtn) {
+        onlineJoinBtn.addEventListener('click', () => {
+          document.getElementById('onlineChoice').classList.add('hidden');
+          document.getElementById('onlineJoinPanel').classList.remove('hidden');
+        });
+      }
+
+      const joinGenerateBtn = document.getElementById('joinGenerateBtn');
+      if (joinGenerateBtn) {
+        joinGenerateBtn.addEventListener('click', async () => {
+          const code = document.getElementById('joinOfferInput').value;
+          if (code) {
+            document.getElementById('joinStatusMsg').innerText = 'Génération du code réponse...';
+            await joinWithOffer(code);
+          }
+        });
+      }
+
+      const copyJoinAnswerBtn = document.getElementById('copyJoinAnswerBtn');
+      if (copyJoinAnswerBtn) {
+        copyJoinAnswerBtn.addEventListener('click', () => {
+          const ta = document.getElementById('joinAnswerCode');
+          ta.select();
+          if (navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(() => {});
+        });
+      }
+
+      // Export / import des statistiques
+      const exportStatsBtn = document.getElementById('exportStatsBtn');
+      if (exportStatsBtn) {
+        exportStatsBtn.addEventListener('click', exportStats);
+      }
+
+      const importStatsBtn = document.getElementById('importStatsBtn');
+      const importStatsFile = document.getElementById('importStatsFile');
+      if (importStatsBtn && importStatsFile) {
+        importStatsBtn.addEventListener('click', () => importStatsFile.click());
+        importStatsFile.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) importStatsFromFile(file);
+          e.target.value = '';
+        });
+      }
+
       // Thème
       document.getElementById('themeToggle').addEventListener('change', applyTheme);
 
@@ -953,3 +1261,4 @@
         });
       });
     });
+
