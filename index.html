@@ -31,6 +31,8 @@
       background-image: radial-gradient(ellipse at center, #faf0e6, #e8d5c4);
     }
 
+    .hidden { display: none !important; }
+
     .screen {
       display: none;
       flex-direction: column;
@@ -868,6 +870,46 @@
 
     .victory-stats .vs-item .vs-num { color: #f7d94a; font-size: 1.6rem; }
 
+    /*  MULTIJOUEUR EN LIGNE (P2P) */
+    .modal-content .online-intro {
+      font-size: 0.8rem;
+      opacity: 0.75;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .modal-content textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 215, 0, 0.15);
+      border-radius: 12px;
+      color: #f0e6d3;
+      padding: 10px 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      resize: vertical;
+      margin: 6px 0 10px;
+    }
+
+    .light-theme .modal-content textarea {
+      background: rgba(255, 255, 255, 0.5);
+      color: #2d1b0e;
+      border-color: rgba(0, 0, 0, 0.15);
+    }
+
+    .online-step {
+      font-size: 0.8rem;
+      opacity: 0.85;
+      margin-top: 10px;
+    }
+
+    .online-status-msg {
+      font-size: 0.75rem;
+      margin-top: 8px;
+      color: #f7d94a;
+      min-height: 1em;
+    }
+
     /* RESPONSIVE  */
     @media (max-width: 600px) {
       .pit { width: 50px; height: 50px; }
@@ -902,7 +944,8 @@
     <div class="subtitle">Jeu de semailles africain</div>
     <div class="menu-buttons">
       <button class="menu-btn gold" id="btnVsAI">⚔️ Affronter l'IA</button>
-      <button class="menu-btn secondary" id="btnTwoPlayer">👥 Deux joueurs</button>
+      <button class="menu-btn secondary" id="btnTwoPlayer">👥 Deux joueurs (local)</button>
+      <button class="menu-btn secondary" id="btnOnline">🌐 En ligne (P2P)</button>
     </div>
     <div class="icon-row">
       <button class="icon-btn" id="btnRules">Regles </button>
@@ -1030,6 +1073,14 @@
       <div class="stat-row"><span>🤝 Matchs nuls</span><span id="statDraws">0</span></div>
       <div class="stat-row"><span>🌾 Graines capturées</span><span id="statSeeds">0</span></div>
       <div class="stat-row"><span>⭐ Meilleur score</span><span id="statBest">0</span></div>
+
+      <div class="setting-row" style="gap:10px; flex-wrap:wrap;">
+        <button class="header-btn" id="exportStatsBtn">⬇️ Exporter (JSON)</button>
+        <button class="header-btn" id="importStatsBtn">⬆️ Importer</button>
+        <input type="file" id="importStatsFile" accept="application/json" class="hidden">
+      </div>
+      <div class="online-status-msg" id="importStatsMsg"></div>
+
       <button class="close-btn" id="closeStatsBtn">Fermer</button>
     </div>
   </div>
@@ -1057,6 +1108,47 @@
         <input type="checkbox" id="soundToggle" checked />
       </div>
       <button class="close-btn" id="closeSettingsBtn">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Multijoueur en ligne (P2P) -->
+  <div id="onlineModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>🌐 Partie en ligne (P2P)</h2>
+      <div class="online-intro">
+        Connexion directe entre deux navigateurs (WebRTC), sans compte ni serveur de jeu.
+        Un des deux joueurs doit copier-coller un code technique à l'autre (message, email...).
+        Cela peut échouer sur certains réseaux très restrictifs (pas de serveur de relais TURN).
+      </div>
+
+      <div id="onlineChoice">
+        <button class="menu-btn gold" id="onlineHostBtn" style="margin-bottom:10px;">Créer une partie (je suis Sud)</button>
+        <button class="menu-btn secondary" id="onlineJoinBtn">Rejoindre une partie (je suis Nord)</button>
+      </div>
+
+      <div id="onlineHostPanel" class="hidden">
+        <div class="online-step">1. Envoie ce code à ton adversaire :</div>
+        <textarea id="hostOfferCode" readonly rows="4"></textarea>
+        <button class="header-btn" id="copyHostOfferBtn">📋 Copier</button>
+
+        <div class="online-step">2. Colle ici le code réponse qu'il t'envoie :</div>
+        <textarea id="hostAnswerInput" rows="4" placeholder="Coller le code réponse ici"></textarea>
+        <button class="menu-btn gold" id="hostConnectBtn">Connecter</button>
+        <div class="online-status-msg" id="hostStatusMsg"></div>
+      </div>
+
+      <div id="onlineJoinPanel" class="hidden">
+        <div class="online-step">1. Colle ici le code reçu de l'hôte :</div>
+        <textarea id="joinOfferInput" rows="4" placeholder="Coller le code de l'hôte ici"></textarea>
+        <button class="menu-btn gold" id="joinGenerateBtn">Générer mon code réponse</button>
+
+        <div class="online-step">2. Renvoie ce code à l'hôte :</div>
+        <textarea id="joinAnswerCode" readonly rows="4"></textarea>
+        <button class="header-btn" id="copyJoinAnswerBtn">📋 Copier</button>
+        <div class="online-status-msg" id="joinStatusMsg"></div>
+      </div>
+
+      <button class="close-btn" id="closeOnlineBtn">Fermer</button>
     </div>
   </div>
 
