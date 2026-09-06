@@ -61,7 +61,7 @@ La partie se termine dans l'un des cas suivants :
 |  Difficile | **Minimax** avec élagage alpha-bêta, profondeur 1 |
 |  Expert | **Minimax** avec élagage alpha-bêta, profondeur 2 |
 
-La fonction d'évaluation combine le score déjà capturé et la moitié du nombre de graines encore présentes dans le camp du joueur évalué (`score + graines_du_camp × 0,5`). À cette profondeur (2, avec au plus 7 coups possibles par niveau), le calcul reste quasi instantané — pas besoin de table de transposition.
+La fonction d'évaluation combine le score déjà capturé et la moitié du nombre de graines encore présentes dans le camp du joueur évalué (`score + graines_du_camp × 0,5`). À cette profondeur (2, avec au plus 7 coups possibles par niveau), le calcul reste quasi instantané - pas besoin de table de transposition.
 
 
 ## Mode en ligne (P2P, WebRTC)
@@ -70,20 +70,20 @@ Le mode **"En ligne (P2P)"** permet à deux joueurs de s'affronter à distance, 
 
 Comme il n'y a pas de serveur de signalisation, l'échange de connexion se fait **manuellement**, en copiant-collant deux courts codes techniques (offre / réponse) entre les deux joueurs, par n'importe quel canal (message, email...) :
 
-1. **L'hôte** clique sur *"Créer une partie"* → un code est généré → il l'envoie à son adversaire.
-2. **L'invité** clique sur *"Rejoindre une partie"*, colle le code reçu → un code réponse est généré → il le renvoie à l'hôte.
+1. **L'hôte** clique sur *"Créer une partie"* puis un code est généré puis il l'envoie à son adversaire.
+2. **L'invité** clique sur *"Rejoindre une partie"*, colle le code reçu puis un code réponse est généré puis il le renvoie à l'hôte.
 3. **L'hôte** colle ce code réponse et clique sur *"Connecter"*.
 4. Une fois la connexion établie, la partie démarre automatiquement des deux côtés : l'hôte joue **Sud**, l'invité joue **Nord**.
 
 Chaque coup joué est envoyé à l'adversaire et rejoué de son côté avec exactement la même logique déterministe (semis, capture, solidarité), ce qui garantit que les deux plateaux restent synchronisés. "Rejouer" et "Quitter" sont également synchronisés entre les deux joueurs.
 
-> Une connexion `stun:stun.l.google.com:19302` (public, gratuit) est utilisée pour aider à la traversée NAT. **Limite inhérente à une solution 100 % gratuite sans serveur** : sur un réseau très restrictif (NAT symétrique, pare-feu d'entreprise strict), la connexion directe peut échouer faute de serveur de relais TURN — un message d'avertissement à ce sujet est affiché dans la fenêtre de connexion.
+> Une connexion `stun:stun.l.google.com:19302` (public, gratuit) est utilisée pour aider à la traversée NAT. **Limite inhérente à une solution 100 % gratuite sans serveur** : sur un réseau très restrictif (NAT symétrique, pare-feu d'entreprise strict), la connexion directe peut échouer faute de serveur de relais TURN - un message d'avertissement à ce sujet est affiché dans la fenêtre de connexion.
 
 
 ##  Fonctionnalités
 
 - **Plateau animé en 3D** (CSS `perspective`/`transform`) avec graines qui apparaissent, se déplacent (animation "graine volante") et disparaissent visuellement lors des captures.
-- **Sons synthétisés** via l'API Web Audio (semis, capture, mélodie de victoire) — activables/désactivables dans les paramètres.
+- **Sons synthétisés** via l'API Web Audio (semis, capture, mélodie de victoire) - activables/désactivables dans les paramètres.
 - **Thème clair / sombre**, mémorisé d'une session à l'autre.
 - **Statistiques persistantes** (parties jouées, victoires solo/duo, matchs nuls, total de graines capturées, meilleur score) sauvegardées en local, avec **export/import au format JSON** pour les transférer d'un appareil ou d'un navigateur à un autre (bouton dans la fenêtre Statistiques).
 - **Historique des coups** (20 derniers coups), consultable dans un panneau repliable.
@@ -94,9 +94,9 @@ Chaque coup joué est envoyé à l'adversaire et rejoué de son côté avec exac
 
 ## Prise en main
 
-1. Sur l'écran d'accueil, choisir **⚔️ Affronter l'IA**, ** Deux joueurs (local)** ou ** En ligne (P2P)**.
-2. En mode IA, sélectionner un niveau de difficulté (Facile → Expert). En mode local, la partie démarre directement. En mode en ligne, suivre les 3 étapes d'échange de code décrites plus haut.
-3. Cliquer sur une fosse **active** de son propre camp pour y jouer (les fosses non jouables — camp adverse, fosse vide, tour de l'autre joueur, ou partie en ligne non encore connectée — sont grisées et désactivées).
+1. Sur l'écran d'accueil, choisir  Affronter l'IA, Deux joueurs (local) ou En ligne (P2P).
+2. En mode IA, sélectionner un niveau de difficulté (Facile jusqu'à Expert). En mode local, la partie démarre directement. En mode en ligne, suivre les 3 étapes d'échange de code décrites plus haut.
+3. Cliquer sur une fosse **active** de son propre camp pour y jouer (les fosses non jouables - camp adverse, fosse vide, tour de l'autre joueur, ou partie en ligne non encore connectée, sont grisées et désactivées).
 4. Suivre le déroulement du semis à l'écran ; les captures sont signalées par un effet visuel et sonore.
 5. La partie se termine automatiquement selon les règles ci-dessus, avec affichage d'un écran de victoire ou de match nul.
 
@@ -106,7 +106,7 @@ Chaque coup joué est envoyé à l'adversaire et rejoué de son côté avec exac
 | Fichier | Rôle |
 |---|---|
 | `index.html` | Structure des écrans (accueil, difficulté, jeu, connexion en ligne) et des modales, styles CSS intégrés (plateau 3D, thèmes, animations, responsive) |
-| `server.js` | Logique complète du jeu : état du plateau, règles de semis/capture/solidarité, IA (minimax), rendu du plateau, animations, sons, statistiques, **et connexion multijoueur P2P (WebRTC)** — malgré son nom, ce fichier s'exécute entièrement côté navigateur, ce n'est pas un serveur |
+| `server.js` | Logique complète du jeu : état du plateau, règles de semis/capture/solidarité, IA (minimax), rendu du plateau, animations, sons, statistiques, **et connexion multijoueur P2P (WebRTC)** - malgré son nom, ce fichier s'exécute entièrement côté navigateur, ce n'est pas un serveur |
 
 Le tout fonctionne **sans backend ni build** : il suffit d'ouvrir `index.html` dans un navigateur (les deux fichiers doivent rester dans le même dossier).
 
@@ -122,7 +122,7 @@ Les statistiques et préférences (thème, son) sont stockées dans le **`localS
 
 ##  Prérequis techniques
 
-- Un navigateur moderne supportant l'API Web Audio (sons), `localStorage` (statistiques/préférences) et **WebRTC** (`RTCPeerConnection`/`RTCDataChannel`, pour le mode en ligne) — aucune installation ni dépendance externe requise.
+- Un navigateur moderne supportant l'API Web Audio (sons), `localStorage` (statistiques/préférences) et **WebRTC** (`RTCPeerConnection`/`RTCDataChannel`, pour le mode en ligne), aucune installation ni dépendance externe requise.
 
 
 ## Limites connues
