@@ -1,6 +1,6 @@
 # 🌾 Songho - Jeu de semailles africain
 
-Jeu de plateau de type *mancala* (semailles/awalé), jouable directement dans le navigateur en **HTML/CSS/JavaScript pur** — aucun backend de jeu, aucun build, aucune dépendance externe. Trois modes : **deux joueurs en local** (même écran), **contre une IA** (4 niveaux), et **en ligne à distance** (P2P, sans serveur).
+Jeu de plateau de type *mancala* (semailles/awalé), jouable directement dans le navigateur en **HTML/CSS/JavaScript pur**, aucun backend de jeu, aucun build, aucune dépendance externe. Trois modes : **deux joueurs en local** (même écran), **contre une IA** (4 niveaux), et **en ligne à distance** (P2P, sans serveur).
 
 ---
 
