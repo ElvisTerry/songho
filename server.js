@@ -1,5 +1,4 @@
-
-    // CONSTANTES 
+// CONSTANTES 
     const TOTAL_PITS = 14;
     const PITS_PER_PLAYER = 7;
     const INIT_SEEDS = 5;
@@ -728,18 +727,24 @@
       setLastMove(moveDesc);
 
       currentPlayer = other(player);
+      // IMPORTANT : isProcessing doit repasser à false AVANT le redessin du
+      // plateau (updateUI), sinon toutes les fosses sont dessinées comme
+      // désactivées et le plateau reste bloqué jusqu'au prochain rendu
+      // (qui n'arrive jamais) — c'était la cause du blocage après le 1er coup.
+      isProcessing = false;
       updateUI();
 
       if (!applySolidarity()) {
-        isProcessing = false;
         return true;
       }
+      // La solidarité modifie le plateau sans le redessiner : on force un
+      // second rendu pour que le don de graines soit visible immédiatement.
+      updateUI();
 
       if (gameMode === 'solo' && gameActive && currentPlayer === 1 && !waitingForAI) {
         setTimeout(() => makeAIMove(), 600);
       }
 
-      isProcessing = false;
       updateStatus('En attente...', 'waiting');
       return true;
     }
@@ -1261,4 +1266,5 @@
         });
       });
     });
+
 
