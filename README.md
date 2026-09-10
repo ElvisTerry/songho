@@ -116,18 +116,13 @@ Chaque coup est envoyé à l'adversaire et rejoué avec la même logique déterm
 | `index.html` | Structure des écrans (accueil, difficulté, jeu, connexion en ligne), styles CSS (thème, cartes, plateau 3D, animations, responsive) |
 | `server.js` | Logique complète : état du plateau, règles (semis/capture/solidarité), IA (minimax), rendu, animations, sons, statistiques, connexion multijoueur P2P -malgré son nom, ce fichier s'exécute entièrement côté navigateur, ce n'est pas un serveur |
 
-Fonctionne **sans backend ni build** : ouvrir `index.html` dans un navigateur suffit (les deux fichiers doivent rester dans le même dossier).
+Fonctionne **sans backend ni build** : ouvrir `index.html` dans un navigateur suffit (les deux fichiers doivent rester dans le même dossier.
 
 ---
 
-## 🌍 Déploiement (GitHub Pages)
+## 🌍 Déploiement
 
-1. Pousser `index.html` et `server.js` à la **racine** du dépôt (dépôt public).
-2. `Settings` - `Pages` - Source : *Deploy from a branch* - branche `main`, dossier `/root` → `Save`.
-3. Le site est servi à `https://<utilisateur>.github.io/<nom-du-dépôt>/` après 1 à 3 minutes.
-4. Chaque `git push` sur `main` redéploie automatiquement.
-
-> GitHub Pages sert toujours en HTTPS, ce qui convient bien au mode en ligne (WebRTC).
+Le site est servi sur netlify avec ce lien https://jeusongo.netlify.app
 
 ---
 
