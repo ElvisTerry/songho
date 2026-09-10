@@ -551,6 +551,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      touch-action: manipulation;
     }
 
     .light-theme .pit {
@@ -942,6 +943,14 @@
 
     /* RESPONSIVE  */
     @media (max-width: 600px) {
+      /* L'effet 3D (perspective + rotateX) est connu pour perturber la
+         détection du toucher sur certains navigateurs mobiles alors que la
+         souris n'est pas affectée : on l'aplatit sur petit écran, l'aspect
+         visuel reste quasi identique. */
+      .board-wrapper { perspective: none; }
+      .board-3d { transform: none; }
+      .board-3d:hover { transform: none; }
+
       .pit { width: 48px; height: 48px; }
       .row { gap: 6px; }
       .board-3d { padding: 12px; }
@@ -1062,10 +1071,10 @@
       <div class="header">
         <div class="logo">🌾 SONGHO</div>
         <div class="header-actions">
-          <button class="header-btn" id="rulesBtnGame"> Règles</button>
-          <button class="header-btn" id="statsBtnGame"> Stats</button>
-          <button class="header-btn primary" id="restartBtn"> Rejouer</button>
-          <button class="header-btn" id="quitBtn"> Quitter</button>
+          <button class="header-btn" id="rulesBtnGame">📖 Règles</button>
+          <button class="header-btn" id="statsBtnGame">📊 Stats</button>
+          <button class="header-btn primary" id="restartBtn">🔄 Rejouer</button>
+          <button class="header-btn" id="quitBtn">✕ Quitter</button>
         </div>
       </div>
 
@@ -1174,8 +1183,8 @@
     <div class="modal-content">
       <div class="trophy-hero">🏆</div>
       <h2>Palmarès</h2>
-      <div class="stat-row"><span>🏅 Victoires solo</span><span id="victorySolo">0</span></div>
-      <div class="stat-row"><span>🏅 Victoires duo</span><span id="victoryDuo">0</span></div>
+      <div class="stat-row"><span> Victoires solo</span><span id="victorySolo">0</span></div>
+      <div class="stat-row"><span> Victoires duo</span><span id="victoryDuo">0</span></div>
       <button class="close-btn" id="closeTrophyBtn">Fermer</button>
     </div>
   </div>
@@ -1214,7 +1223,7 @@
       <div id="onlineHostPanel" class="hidden">
         <div class="online-step">1. Envoie ce code à ton adversaire :</div>
         <textarea id="hostOfferCode" readonly rows="4"></textarea>
-        <button class="header-btn" id="copyHostOfferBtn">📋 Copier</button>
+        <button class="header-btn" id="copyHostOfferBtn"> Copier</button>
 
         <div class="online-step">2. Colle ici le code réponse qu'il t'envoie :</div>
         <textarea id="hostAnswerInput" rows="4" placeholder="Coller le code réponse ici"></textarea>
@@ -1229,7 +1238,7 @@
 
         <div class="online-step">2. Renvoie ce code à l'hôte :</div>
         <textarea id="joinAnswerCode" readonly rows="4"></textarea>
-        <button class="header-btn" id="copyJoinAnswerBtn">📋 Copier</button>
+        <button class="header-btn" id="copyJoinAnswerBtn"> Copier</button>
         <div class="online-status-msg" id="joinStatusMsg"></div>
       </div>
 
