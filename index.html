@@ -934,6 +934,103 @@
       margin-top: 10px;
     }
 
+    /* ACTIONS DE FIN DE PARTIE (revanche / accueil) */
+    .victory-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 22px;
+    }
+
+    .victory-actions .close-btn { margin: 0; }
+
+    .btn-secondary {
+      padding: 13px 30px;
+      border: 1px solid var(--border-strong);
+      border-radius: 40px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+      transform: scale(1.03);
+    }
+
+    /* FIN DE CONNEXION (adversaire parti / réseau coupé) */
+    #connectionEndOverlay .modal-content {
+      text-align: center;
+      max-width: 420px;
+      border: 2px solid var(--blue);
+    }
+
+    #connectionEndOverlay.is-error .modal-content {
+      border-color: var(--red);
+    }
+
+    #connectionEndMessage {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+
+    /* TOASTS (notifications non bloquantes) */
+    .toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      pointer-events: none;
+      width: 100%;
+      padding: 0 12px;
+    }
+
+    .toast {
+      pointer-events: auto;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      padding: 11px 20px;
+      border-radius: 30px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+      max-width: 90vw;
+      text-align: center;
+      animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toast.info { border-color: var(--blue); }
+    .toast.success { border-color: var(--green); }
+    .toast.warning { border-color: var(--gold); }
+    .toast.error { border-color: var(--red); }
+
+    .toast.fade-out {
+      animation: toastOut 0.35s ease forwards;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-16px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(-12px) scale(0.95); }
+    }
+
     .online-status-msg {
       font-size: 0.75rem;
       margin-top: 8px;
@@ -1011,7 +1108,7 @@
     <div class="icon-row">
       <button class="icon-btn" id="btnRules" title="Règles">📖</button>
       <button class="icon-btn" id="btnTrophy" title="Palmarès">🏆</button>
-      <button class="icon-btn" id="btnStats" title="Statistiques">📉</button>
+      <button class="icon-btn" id="btnStats" title="Statistiques">📊</button>
       <button class="icon-btn" id="btnSettings" title="Paramètres">⚙️</button>
     </div>
   </div>
@@ -1256,9 +1353,23 @@
       </div>
       <p>🌾 Graines restantes : <strong id="victoryRemaining">0</strong></p>
       <p>⏱️ Temps : <strong id="victoryDuration">0</strong>s</p>
-      <button class="close-btn" id="victoryCloseBtn">Continuer</button>
+      <div class="victory-actions">
+        <button class="close-btn" id="victoryRematchBtn">🔄 Rejouer</button>
+        <button class="btn-secondary" id="victoryHomeBtn">🏠 Accueil</button>
+      </div>
     </div>
   </div>
+
+  <!-- Fin de connexion (adversaire parti / réseau coupé) -->
+  <div id="connectionEndOverlay" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="connectionEndTitle">🔌 Connexion terminée</h2>
+      <p id="connectionEndMessage">La connexion avec ton adversaire s'est terminée.</p>
+      <button class="close-btn" id="connectionEndHomeBtn">🏠 Retour à l'accueil</button>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
 
   <script type="text/javascript" src="server.js"></script>
 </body>
