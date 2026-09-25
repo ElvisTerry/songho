@@ -1,4 +1,4 @@
-// CONSTANTES 
+ // CONSTANTES 
     const TOTAL_PITS = 14;
     const PITS_PER_PLAYER = 7;
     const INIT_SEEDS = 5;
@@ -57,6 +57,39 @@
     let onlinePlayerRole = null;  // rôle utilisé pendant la partie en cours
     let onlineConnected = false;
 
+    // true quand NOUS sommes à l'origine de la fermeture de la connexion
+    // (quitter, revenir à l'accueil, adversaire ayant lui-même quitté proprement).
+    // Permet de distinguer un départ volontaire d'une vraie coupure réseau,
+    // pour ne plus afficher "Connexion perdue" à tort.
+    let intentionalClose = false;
+    let connectionWarningShown = false;
+
+    
+    //  NOTIFICATIONS (toasts) 
+    
+    function showToast(message, type = 'info', duration = 4000) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerText = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 350);
+      }, duration);
+    }
+
+    function showConnectionEndOverlay(title, message, isError) {
+      gameActive = false;
+      updateUI();
+      const overlay = document.getElementById('connectionEndOverlay');
+      document.getElementById('connectionEndTitle').innerText = title;
+      document.getElementById('connectionEndMessage').innerText = message;
+      overlay.classList.toggle('is-error', !!isError);
+      overlay.classList.remove('hidden');
+    }
+
     function encodeSDP(desc) {
       return btoa(JSON.stringify(desc));
     }
@@ -81,15 +114,31 @@
     function setupDataChannelEvents(channel) {
       channel.onopen = () => {
         onlineConnected = true;
+        connectionWarningShown = false;
         const modal = document.getElementById('onlineModal');
         if (modal) modal.classList.add('hidden');
         startGame('online', 1, onlineRole);
       };
       channel.onclose = () => {
+        const wasConnected = onlineConnected;
         onlineConnected = false;
-        if (gameMode === 'online') {
-          alert("Connexion perdue avec ton adversaire.");
-          backToHome();
+        updateInfoBar();
+        // Fermeture voulue (nous avons quitté, ou l'adversaire a quitté
+        // proprement et nous l'avons déjà géré) : rien à signaler.
+        if (intentionalClose) {
+          intentionalClose = false;
+          return;
+        }
+        // Coupure inattendue en cours de partie ou en fin de partie, avant
+        // que quiconque n'ait volontairement quitté : on informe sans
+        // renvoyer brutalement à l'accueil, et on propose "Rejouer/Quitter"
+        // via l'overlay de fin de connexion plutôt qu'une simple alerte.
+        if (gameMode === 'online' && wasConnected) {
+          showConnectionEndOverlay(
+            '🔌 Connexion perdue',
+            "La connexion avec ton adversaire a été interrompue (réseau). Vous devrez recréer une partie en ligne pour continuer.",
+            true
+          );
         }
       };
       channel.onerror = () => {
@@ -101,9 +150,21 @@
         if (msg.type === 'move') {
           executeMove(msg.player, msg.pit);
         } else if (msg.type === 'restart') {
+          document.getElementById('connectionEndOverlay').classList.add('hidden');
+          victoryOverlay.classList.add('hidden');
+          showToast('🔄 Ton adversaire relance une nouvelle partie !', 'info');
           resetGame();
         } else if (msg.type === 'quit') {
-          backToHome();
+          // L'adversaire a quitté volontairement : on marque la fermeture
+          // à venir comme "attendue" pour ne pas afficher une fausse
+          // alerte de coupure réseau, puis on prévient calmement.
+          intentionalClose = true;
+          victoryOverlay.classList.add('hidden');
+          showConnectionEndOverlay(
+            '🚪 Partie quittée',
+            "Ton adversaire a quitté la partie.",
+            false
+          );
         }
       };
     }
@@ -111,7 +172,9 @@
     function sendOnlineMessage(msg) {
       if (dataChannel && dataChannel.readyState === 'open') {
         dataChannel.send(JSON.stringify(msg));
+        return true;
       }
+      return false;
     }
 
     function closeOnlineConnection() {
@@ -122,10 +185,28 @@
       onlineConnected = false;
     }
 
+    // Surveille l'état réseau bas niveau (ICE) pour prévenir d'une
+    // instabilité avant même que le canal de données ne se ferme.
+    function attachConnectionMonitoring(pc) {
+      pc.onconnectionstatechange = () => {
+        if (!pc) return;
+        const state = pc.connectionState;
+        if ((state === 'disconnected' || state === 'failed') &&
+            gameMode === 'online' && !intentionalClose && !connectionWarningShown) {
+          connectionWarningShown = true;
+          showToast('⚠️ Connexion instable avec ton adversaire...', 'warning');
+        }
+        if (state === 'connected') {
+          connectionWarningShown = false;
+        }
+      };
+    }
+
     // --- Hôte : crée l'offre ---
     async function createHostOffer() {
       closeOnlineConnection();
       peerConnection = new RTCPeerConnection(ICE_SERVERS);
+      attachConnectionMonitoring(peerConnection);
       dataChannel = peerConnection.createDataChannel('songho');
       setupDataChannelEvents(dataChannel);
 
@@ -157,6 +238,7 @@
         const offer = decodeSDP(offerCode);
         closeOnlineConnection();
         peerConnection = new RTCPeerConnection(ICE_SERVERS);
+        attachConnectionMonitoring(peerConnection);
         peerConnection.ondatachannel = (event) => {
           dataChannel = event.channel;
           setupDataChannelEvents(dataChannel);
@@ -1009,10 +1091,42 @@
     function backToHome() {
       gameScreen.classList.remove('active');
       homeScreen.classList.add('active');
+      document.getElementById('connectionEndOverlay').classList.add('hidden');
+      victoryOverlay.classList.add('hidden');
       if (gameMode === 'online') {
+        intentionalClose = true;
         closeOnlineConnection();
       }
       resetGame();
+    }
+
+    // Relance une partie : en ligne, prévient l'adversaire avant de
+    // réinitialiser localement (même logique que le bouton "Rejouer" en
+    // partie et que celui de l'écran de victoire).
+    function requestRestart() {
+      if (gameMode === 'online') {
+        if (!onlineConnected) {
+          showToast("Impossible de rejouer : plus de connexion avec l'adversaire.", 'error');
+          return;
+        }
+        sendOnlineMessage({ type: 'restart' });
+      }
+      victoryOverlay.classList.add('hidden');
+      resetGame();
+      if (gameMode === 'solo' && currentPlayer === 1 && gameActive) {
+        setTimeout(() => makeAIMove(), 800);
+      }
+    }
+
+    // Quitte proprement : prévient l'adversaire (s'il est encore là) puis
+    // revient à l'accueil, sans déclencher la fausse alerte "connexion
+    // perdue" (voir le flag intentionalClose dans setupDataChannelEvents).
+    function requestQuit() {
+      if (gameMode === 'online') {
+        intentionalClose = true;
+        sendOnlineMessage({ type: 'quit' });
+      }
+      backToHome();
     }
 
     function showDifficultyScreen() {
@@ -1137,20 +1251,11 @@
       });
 
       document.getElementById('restartBtn').addEventListener('click', () => {
-        if (confirm('Recommencer la partie ?')) {
-          if (gameMode === 'online') sendOnlineMessage({ type: 'restart' });
-          resetGame();
-          if (gameMode === 'solo' && currentPlayer === 1 && gameActive) {
-            setTimeout(() => makeAIMove(), 800);
-          }
-        }
+        if (confirm('Recommencer la partie ?')) requestRestart();
       });
 
       document.getElementById('quitBtn').addEventListener('click', () => {
-        if (confirm('Quitter la partie ?')) {
-          if (gameMode === 'online') sendOnlineMessage({ type: 'quit' });
-          backToHome();
-        }
+        if (confirm('Quitter la partie ?')) requestQuit();
       });
 
       // Historique
@@ -1164,8 +1269,17 @@
       document.getElementById('closeStatsBtn').addEventListener('click', () => statsModal.classList.add('hidden'));
       document.getElementById('closeTrophyBtn').addEventListener('click', () => trophyModal.classList.add('hidden'));
       document.getElementById('closeSettingsBtn').addEventListener('click', () => settingsModal.classList.add('hidden'));
-      document.getElementById('victoryCloseBtn').addEventListener('click', () => {
+      document.getElementById('victoryRematchBtn').addEventListener('click', () => {
+        requestRestart();
+      });
+
+      document.getElementById('victoryHomeBtn').addEventListener('click', () => {
         victoryOverlay.classList.add('hidden');
+        requestQuit();
+      });
+
+      document.getElementById('connectionEndHomeBtn').addEventListener('click', () => {
+        document.getElementById('connectionEndOverlay').classList.add('hidden');
         backToHome();
       });
 
@@ -1262,9 +1376,12 @@
       // Fermer les modales au clic sur le fond
       document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (e) => {
-          if (e.target === modal) modal.classList.add('hidden');
+          if (e.target !== modal) return;
+          modal.classList.add('hidden');
+          // Le plateau est figé une fois cette overlay affichée : un clic
+          // en dehors doit ramener à l'accueil plutôt que laisser le
+          // joueur bloqué sur une partie inactive.
+          if (modal.id === 'connectionEndOverlay') backToHome();
         });
       });
     });
-
-
