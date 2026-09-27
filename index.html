@@ -1081,7 +1081,7 @@
 
     <div class="menu-cards">
       <button class="menu-card green" id="btnTwoPlayer">
-        <span class="menu-card-icon">👥</span>
+        <span class="menu-card-icon"></span>
         <span class="menu-card-text">
           <span class="menu-card-title">Deux joueurs</span>
           <span class="menu-card-sub">Jouez contre un ami (local)</span>
@@ -1089,7 +1089,7 @@
       </button>
 
       <button class="menu-card blue" id="btnVsAI">
-        <span class="menu-card-icon">🤖</span>
+        <span class="menu-card-icon"></span>
         <span class="menu-card-text">
           <span class="menu-card-title">Jouer contre la machine</span>
           <span class="menu-card-sub">Affrontez l'IA, 4 niveaux</span>
@@ -1097,7 +1097,7 @@
       </button>
 
       <button class="menu-card purple" id="btnOnline">
-        <span class="menu-card-icon">🌐</span>
+        <span class="menu-card-icon"></span>
         <span class="menu-card-text">
           <span class="menu-card-title">En ligne (P2P)</span>
           <span class="menu-card-sub">Jouez à distance, sans serveur</span>
@@ -1109,7 +1109,7 @@
       <button class="icon-btn" id="btnRules" title="Règles">📖</button>
       <button class="icon-btn" id="btnTrophy" title="Palmarès">🏆</button>
       <button class="icon-btn" id="btnStats" title="Statistiques">📊</button>
-      <button class="icon-btn" id="btnSettings" title="Paramètres">⚙️</button>
+      <button class="icon-btn" id="btnSettings" title="Paramètres">⚙️ settings</button>
     </div>
   </div>
 
@@ -1243,7 +1243,7 @@
   <!-- Règles -->
   <div id="rulesModal" class="modal hidden">
     <div class="modal-content">
-      <h2>📖 Règles</h2>
+      <h2> Règles</h2>
       <div class="stat-row"><span> Chaque joueur possède <strong>7 fosses</strong></span></div>
       <div class="stat-row"><span> Semez les graines <strong>dans le sens inverse</strong> des aiguilles</span></div>
       <div class="stat-row"><span> Capturez si la dernière fosse contient <strong>2, 3 ou 4</strong> graines</span></div>
@@ -1289,7 +1289,7 @@
   <!-- Paramètres -->
   <div id="settingsModal" class="modal hidden">
     <div class="modal-content">
-      <h2>⚙️ Paramètres</h2>
+      <h2> Paramètres</h2>
       <div class="setting-row">
         <span>🌓 Thème clair</span>
         <input type="checkbox" id="themeToggle" />
@@ -1305,7 +1305,7 @@
   <!-- Multijoueur en ligne (P2P) -->
   <div id="onlineModal" class="modal hidden">
     <div class="modal-content">
-      <h2>🌐 Partie en ligne (P2P)</h2>
+      <h2> Partie en ligne (P2P)</h2>
       <div class="online-intro">
         Connexion directe entre deux navigateurs (WebRTC), sans compte ni serveur de jeu.
         Un des deux joueurs doit copier-coller un code technique à l'autre (message, email...).
@@ -1354,8 +1354,8 @@
       <p>🌾 Graines restantes : <strong id="victoryRemaining">0</strong></p>
       <p>⏱️ Temps : <strong id="victoryDuration">0</strong>s</p>
       <div class="victory-actions">
-        <button class="close-btn" id="victoryRematchBtn">🔄 Rejouer</button>
-        <button class="btn-secondary" id="victoryHomeBtn">🏠 Accueil</button>
+        <button class="close-btn" id="victoryRematchBtn"> Rejouer</button>
+        <button class="btn-secondary" id="victoryHomeBtn"> Accueil</button>
       </div>
     </div>
   </div>
@@ -1365,7 +1365,7 @@
     <div class="modal-content">
       <h2 id="connectionEndTitle">🔌 Connexion terminée</h2>
       <p id="connectionEndMessage">La connexion avec ton adversaire s'est terminée.</p>
-      <button class="close-btn" id="connectionEndHomeBtn">🏠 Retour à l'accueil</button>
+      <button class="close-btn" id="connectionEndHomeBtn"> Retour à l'accueil</button>
     </div>
   </div>
 
